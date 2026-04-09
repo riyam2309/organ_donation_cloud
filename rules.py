@@ -280,6 +280,8 @@ def score_kidney(donor: Donor, recipient: Recipient, now: datetime) -> Optional[
     # HLA crossmatch negative (we model as hla_match_score present; if missing, reject)
     if recipient.hla_match_score is None:
         return None
+    if recipient.crossmatch_negative is not True:
+        return None
 
     # ESRD requirement
     if not (recipient.on_dialysis or (recipient.egfr is not None and recipient.egfr < 20)):
