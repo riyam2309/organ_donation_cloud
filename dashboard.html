@@ -5,599 +5,294 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Organ Allocation Dashboard</title>
     <style>
-      :root { color-scheme: light; }
-      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; }
-      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-      .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; }
-      h1 { margin: 0 0 12px; font-size: 18px; }
-      h2 { margin: 0 0 8px; font-size: 14px; color: #111827; }
-      table { width: 100%; border-collapse: collapse; font-size: 12px; }
-      th, td { border-bottom: 1px solid #f3f4f6; padding: 6px; text-align: left; vertical-align: top; }
-      .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: #f3f4f6; }
-      .ok { background: #dcfce7; }
-      .bad { background: #fee2e2; }
-      .muted { color: #6b7280; }
-      .events { max-height: 280px; overflow: auto; }
-      code { background: #f3f4f6; padding: 1px 4px; border-radius: 6px; }
-      .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-      .small { font-size: 12px; }
-      .right { text-align: right; }
-      button { padding: 8px 10px; border-radius: 10px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; }
-      button:hover { background: #f9fafb; }
-      input, select { padding: 7px 8px; border-radius: 10px; border: 1px solid #e5e7eb; }
-      .req { color: #dc2626; font-weight: 700; }
-      .alert { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; padding: 8px 10px; border-radius: 10px; }
+      :root {
+        --bg: #f6efe8; --bg-2: #fffaf6; --panel: rgba(255, 252, 248, 0.92); --panel-strong: #fffdfb;
+        --ink: #1e1b18; --muted: #6f665d; --line: #eadbcb; --accent: #b45309; --accent-2: #7c2d12;
+        --success: #166534; --success-bg: #dcfce7; --danger: #b91c1c; --danger-bg: #fee2e2;
+        --warn: #9a3412; --warn-bg: #fff7ed; --shadow: 0 20px 50px rgba(77, 45, 19, 0.12); --radius: 20px;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; color: var(--ink); font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: radial-gradient(circle at top left, rgba(180,83,9,.16), transparent 22%),
+                    radial-gradient(circle at top right, rgba(124,45,18,.12), transparent 26%),
+                    linear-gradient(180deg, var(--bg), var(--bg-2)); min-height: 100vh; }
+      .shell { width: min(1400px, calc(100vw - 32px)); margin: 24px auto 40px; }
+      .hero { display:grid; grid-template-columns:1.4fr .8fr; gap:18px; margin-bottom:18px; }
+      .hero-card, .status-card, .page, .nav, .alert { backdrop-filter: blur(8px); background: var(--panel); border: 1px solid rgba(255,255,255,.55); box-shadow: var(--shadow); }
+      .hero-card, .status-card, .page { border-radius: 28px; }
+      .hero-card { padding: 24px; }
+      .status-card { padding: 20px; }
+      .eyebrow { display:inline-flex; padding:8px 12px; border-radius:999px; font-size:12px; font-weight:700; color:var(--accent-2); background:#fff1e3; border:1px solid #f1d2b6; text-transform:uppercase; letter-spacing:.14em; }
+      h1 { margin:14px 0 10px; font-size: clamp(28px, 4vw, 44px); line-height:1.02; font-family: Georgia, "Times New Roman", serif; }
+      .hero p, .status-card p, .muted { color: var(--muted); }
+      .hero-meta { margin-top: 18px; display:flex; gap:10px; flex-wrap:wrap; }
+      .pill { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; font-size:12px; font-weight:700; background:#f4ede6; color:var(--muted); border:1px solid var(--line); }
+      .ok { background: var(--success-bg); color: var(--success); } .bad { background: var(--danger-bg); color: var(--danger); }
+      .small { font-size:12px; } .right { text-align:right; }
+      code,.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      code { background:#f7ede3; border:1px solid #ecd5be; padding:2px 6px; border-radius:8px; }
+      .nav { display:flex; gap:10px; padding:12px; border-radius:22px; margin-bottom:18px; overflow:auto; position:sticky; top:12px; z-index:10; }
+      .nav button { border:0; background:transparent; color:var(--muted); padding:12px 16px; border-radius:14px; cursor:pointer; font-weight:700; }
+      .nav button.active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color:white; }
+      .alert { margin:0 0 18px; padding:12px 14px; border-radius:18px; background: var(--warn-bg); border-color:#fdba74; color: var(--warn); display:none; }
+      .page { display:none; padding:20px; } .page.active { display:block; }
+      .page-head { display:flex; justify-content:space-between; gap:16px; margin-bottom:16px; }
+      .page-head h2 { margin:0; font-family: Georgia, "Times New Roman", serif; font-size:28px; }
+      .card-grid { display:grid; grid-template-columns: repeat(12, 1fr); gap:16px; }
+      .card { grid-column: span 12; background: var(--panel-strong); border:1px solid var(--line); border-radius: var(--radius); padding:18px; }
+      .card.half { grid-column: span 6; }
+      .card h3 { margin:0 0 12px; }
+      .section-subtitle { margin:0 0 14px; color:var(--muted); font-size:13px; }
+      .form-grid { display:grid; grid-template-columns: repeat(12, 1fr); gap:12px; }
+      .field { grid-column: span 3; display:flex; flex-direction:column; gap:6px; }
+      .field.wide { grid-column: span 6; } .field.full { grid-column: span 12; }
+      .field.hidden { display: none !important; }
+      .field label { font-size:12px; font-weight:700; color:var(--muted); }
+      input, select, button { width:100%; padding:11px 12px; border-radius:14px; border:1px solid var(--line); background:white; color:var(--ink); }
+      .primary-btn { border:0; font-weight:800; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color:white; cursor:pointer; }
+      .req { color:#dc2626; font-weight:700; }
+      .message { margin-top:10px; min-height:18px; color:var(--muted); font-size:13px; }
+      .stats { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-top:16px; }
+      .stat { background: linear-gradient(180deg, #fffdfb, #f9f2ea); border:1px solid var(--line); border-radius:18px; padding:16px; }
+      .stat .label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; } .stat .value { font-size:28px; font-weight:800; margin-top:8px; }
+      table { width:100%; border-collapse:collapse; font-size:13px; } th,td { border-bottom:1px solid #f2e6db; padding:10px 8px; text-align:left; }
+      th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
+      .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:18px; background:white; }
+      .events { max-height: 480px; overflow:auto; }
+      .empty { padding:20px; text-align:center; color:var(--muted); }
+      @media (max-width:1100px) { .hero{grid-template-columns:1fr;} .card.half{grid-column:span 12;} .field,.field.wide{grid-column:span 6;} .stats{grid-template-columns:repeat(2,1fr);} }
+      @media (max-width:700px) { .shell{width:min(100vw - 16px,1400px); margin:12px auto 28px;} .field,.field.wide,.field.full{grid-column:span 12;} .stats{grid-template-columns:1fr;} }
     </style>
   </head>
   <body>
-    <div class="row">
-      <h1>Real-Time Organ Allocation Dashboard</h1>
-      <span id="wsStatus" class="pill muted">connecting…</span>
-      <span class="pill muted small">API: <code>/docs</code></span>
-    </div>
-    <div id="criticalAlert" class="alert small" style="margin:10px 0; display:none"></div>
+    <div class="shell">
+      <section class="hero">
+        <div class="hero-card">
+          <span class="eyebrow">Clinical Matching Console</span>
+          <h1>Real-Time Organ Allocation Dashboard</h1>
+          <p>Create donors and recipients, monitor allocation outcomes, and watch live events.</p>
+          <div class="hero-meta">
+            <span id="wsStatus" class="pill muted">connecting...</span>
+            <span class="pill small">API: <code>/docs</code></span>
+            <span class="pill small">WebSocket: <code>/ws</code></span>
+          </div>
+        </div>
+        <div class="status-card">
+          <div><h3 style="margin:0 0 8px;font-size:20px;">System Snapshot</h3><p>Live operational overview.</p></div>
+          <div class="stats">
+            <div class="stat"><div class="label">Recipients</div><div id="statRecipients" class="value">0</div></div>
+            <div class="stat"><div class="label">Donors</div><div id="statDonors" class="value">0</div></div>
+            <div class="stat"><div class="label">Allocations</div><div id="statAllocations" class="value">0</div></div>
+            <div class="stat"><div class="label">Critical Organs</div><div id="statCritical" class="value">0</div></div>
+          </div>
+        </div>
+      </section>
 
-    <div class="grid">
-      <div class="card">
-        <h2>Quick add recipient (clinical)</h2>
-        <div class="row small">
-          <label>Organ <span class="req">*</span>
-            <select id="rOrgan">
-              <option value="kidney">kidney</option>
-              <option value="liver">liver</option>
-              <option value="heart">heart</option>
-              <option value="lung">lung</option>
-              <option value="pancreas">pancreas</option>
-              <option value="cornea">cornea</option>
-            </select>
-          </label>
-          <label>Blood <span class="req">*</span>
-            <select id="rBlood">
-              <option value="O">O</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="AB">AB</option>
-            </select>
-          </label>
-          <label>Rh <span class="req">*</span>
-            <select id="rRh">
-              <option value="positive">+</option>
-              <option value="negative">-</option>
-            </select>
-          </label>
-        </div>
-        <div class="row small" style="margin-top:6px">
-          <label>Age (0-120)
-            <input id="rAge" type="number" min="0" max="120" style="width:70px" />
-          </label>
-          <label>Weight (kg) (1-300)
-            <input id="rWeight" type="number" min="0" step="0.1" style="width:80px" />
-          </label>
-          <label>Height (cm) (30-250)
-            <input id="rHeight" type="number" min="0" step="0.5" style="width:80px" />
-          </label>
-          <label>Hospital <span class="req">*</span>
-            <select id="rHospital" style="width:220px"></select>
-          </label>
-        </div>
-        <div class="row small" style="margin-top:6px">
-          <label>Urgency (1-10) <span class="req">*</span>
-            <input id="rUrgency" type="number" min="1" max="10" value="7" style="width:70px" />
-          </label>
-          <label>Heart status (1A/1B/2)
-            <select id="rHeartStatus">
-              <option value="">n/a</option>
-              <option value="1A">1A</option>
-              <option value="1B">1B</option>
-              <option value="2">2</option>
-            </select>
-          </label>
-          <label>Stable for surgery
-            <select id="rStable">
-              <option value="">n/a</option>
-              <option value="true">yes</option>
-              <option value="false">no</option>
-            </select>
-          </label>
-          <label>On dialysis
-            <select id="rOnDialysis">
-              <option value="">n/a</option>
-              <option value="true">yes</option>
-              <option value="false">no</option>
-            </select>
-          </label>
-          <label>CMV+ (lung)
-            <select id="rCMV">
-              <option value="">n/a</option>
-              <option value="true">yes</option>
-              <option value="false">no</option>
-            </select>
-          </label>
-          <label>LAS (lung) (0-100)
-            <input id="rLAS" type="number" min="0" max="100" step="0.1" style="width:70px" />
-          </label>
-        </div>
-        <div class="row small" style="margin-top:6px">
-          <label>MELD (6-40)
-            <input id="rMELD" type="number" min="6" max="40" style="width:70px" />
-          </label>
-          <label>PELD (0-40)
-            <input id="rPELD" type="number" min="0" max="40" style="width:70px" />
-          </label>
-          <label>HLA match (0-6)
-            <input id="rHLA" type="number" min="0" max="6" style="width:70px" />
-          </label>
-          <label>PRA % (0-100)
-            <input id="rPRA" type="number" min="0" max="100" style="width:70px" />
-          </label>
-        </div>
-        <div class="row small" style="margin-top:6px">
-          <label>Type 1 DM
-            <select id="rT1DM">
-              <option value="">n/a</option>
-              <option value="true">yes</option>
-              <option value="false">no</option>
-            </select>
-          </label>
-          <label>Pancreas indication
-            <select id="rPancreasIndication">
-              <option value="">n/a</option>
-              <option value="SPK">SPK</option>
-              <option value="PAK">PAK</option>
-              <option value="PA">PA</option>
-            </select>
-          </label>
-          <label>C-peptide (0-10)
-            <input id="rCPeptide" type="number" min="0" step="0.1" style="width:70px" />
-          </label>
-          <label>Cornea visual score (0-1)
-            <input id="rVAScore" type="number" min="0" max="1" step="0.1" style="width:80px" />
-          </label>
-        </div>
-        <button id="btnAddRecipient" class="small" style="margin-top:8px">Add recipient</button>
-        <p id="recipientMsg" class="small muted"></p>
-      </div>
+      <div id="criticalAlert" class="alert small"></div>
 
-      <div class="card">
-        <h2>Quick add donor (triggers allocation)</h2>
-        <div class="row small">
-          <label>Organ <span class="req">*</span>
-            <select id="dOrgan">
-              <option value="kidney">kidney</option>
-              <option value="liver">liver</option>
-              <option value="heart">heart</option>
-              <option value="lung">lung</option>
-              <option value="pancreas">pancreas</option>
-              <option value="cornea">cornea</option>
-            </select>
-          </label>
-          <label>Blood <span class="req">*</span>
-            <select id="dBlood">
-              <option value="O">O</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="AB">AB</option>
-            </select>
-          </label>
-          <label>Rh <span class="req">*</span>
-            <select id="dRh">
-              <option value="positive">+</option>
-              <option value="negative">-</option>
-            </select>
-          </label>
-        </div>
-        <div class="row small" style="margin-top:6px">
-          <label>Age (0-120)
-            <input id="dAge" type="number" min="0" max="120" style="width:70px" />
-          </label>
-          <label>Weight (kg) (1-300)
-            <input id="dWeight" type="number" min="0" step="0.1" style="width:80px" />
-          </label>
-          <label>Height (cm) (30-250)
-            <input id="dHeight" type="number" min="0" step="0.5" style="width:80px" />
-          </label>
-          <label>Hospital <span class="req">*</span>
-            <select id="dHospital" style="width:220px"></select>
-          </label>
-        </div>
-        <div class="row small" style="margin-top:6px">
-          <label>Pack-years (lung) (0-80)
-            <input id="dPackYears" type="number" min="0" step="0.1" style="width:80px" />
-          </label>
-          <label>BMI (pancreas) (10-80)
-            <input id="dBMI" type="number" min="0" step="0.1" style="width:80px" />
-          </label>
-          <label>Amylase normal
-            <select id="dAmylaseNormal">
-              <option value="">n/a</option>
-              <option value="true">yes</option>
-              <option value="false">no</option>
-            </select>
-          </label>
-          <label>Lipase normal
-            <select id="dLipaseNormal">
-              <option value="">n/a</option>
-              <option value="true">yes</option>
-              <option value="false">no</option>
-            </select>
-          </label>
-        </div>
-        <div class="row small" style="margin-top:6px">
-          <label>CMV+
-            <select id="dCMV">
-              <option value="">n/a</option>
-              <option value="true">yes</option>
-              <option value="false">no</option>
-            </select>
-          </label>
-        </div>
-        <button id="btnAddDonor" class="small" style="margin-top:8px">Add donor</button>
-        <p id="donorMsg" class="small muted"></p>
-      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-page="overviewPage">Overview</button>
+        <button class="nav-btn" data-page="recipientPage">Recipient Form</button>
+        <button class="nav-btn" data-page="donorPage">Donor Form</button>
+        <button class="nav-btn" data-page="waitlistPage">Waitlist</button>
+        <button class="nav-btn" data-page="donorListPage">Donor List</button>
+        <button class="nav-btn" data-page="allocationPage">Allocations</button>
+        <button class="nav-btn" data-page="eventsPage">Events</button>
+      </nav>
 
-      <div class="card">
-        <h2>Recipients (waiting list)</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Organ</th>
-              <th>Blood</th>
-              <th>Urgency</th>
-              <th>Viability left</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="recipientsBody"></tbody>
-        </table>
-      </div>
+      <main class="pages">
+        <section id="overviewPage" class="page active">
+          <div class="page-head"><div><h2>Overview</h2><p>High-level summary.</p></div></div>
+          <div class="card-grid">
+            <div class="card half"><h3>Recent Waitlist Snapshot</h3><div class="table-wrap"><table><thead><tr><th>ID</th><th>Organ</th><th>Blood</th><th>Urgency</th><th>Status</th></tr></thead><tbody id="overviewRecipientsBody"></tbody></table></div></div>
+            <div class="card half"><h3>Recent Donor Snapshot</h3><div class="table-wrap"><table><thead><tr><th>ID</th><th>Organ</th><th>Blood</th><th>Viability Left</th><th>Status</th></tr></thead><tbody id="overviewDonorsBody"></tbody></table></div></div>
+            <div class="card"><h3>Recent Allocation Activity</h3><div class="table-wrap"><table><thead><tr><th>Time</th><th>Organ</th><th>Donor</th><th>Recipient</th></tr></thead><tbody id="overviewAllocationsBody"></tbody></table></div></div>
+          </div>
+        </section>
 
-      <div class="card">
-        <h2>Donors</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Organ</th>
-              <th>Blood</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="donorsBody"></tbody>
-        </table>
-      </div>
+        <section id="recipientPage" class="page">
+          <div class="page-head"><div><h2>Recipient Form</h2><p>Only mandatory fields are shown for selected organ.</p></div></div>
+          <div class="card"><h3>Quick add recipient (clinical)</h3>
+            <div class="form-grid">
+              <div class="field" id="rf-rOrgan"><label>Organ <span class="req">*</span></label><select id="rOrgan"><option value="kidney">kidney</option><option value="liver">liver</option><option value="heart">heart</option><option value="lung">lung</option><option value="pancreas">pancreas</option><option value="cornea">cornea</option></select></div>
+              <div class="field" id="rf-rBlood"><label>Blood <span class="req">*</span></label><select id="rBlood"><option value="O">O</option><option value="A">A</option><option value="B">B</option><option value="AB">AB</option></select></div>
+              <div class="field" id="rf-rRh"><label>Rh <span class="req">*</span></label><select id="rRh"><option value="positive">+</option><option value="negative">-</option></select></div>
+              <div class="field wide" id="rf-rHospital"><label>Hospital <span class="req">*</span></label><select id="rHospital"></select></div>
+              <div class="field" id="rf-rUrgency"><label>Urgency (1-10) <span class="req">*</span></label><input id="rUrgency" type="number" min="1" max="10" value="7" /></div>
 
-      <div class="card">
-        <h2>Allocations</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Organ</th>
-              <th>Donor</th>
-              <th>Recipient</th>
-            </tr>
-          </thead>
-          <tbody id="allocationsBody"></tbody>
-        </table>
-      </div>
+              <div class="field" id="rf-rWeight"><label>Weight (kg) (1-300) <span class="req">*</span></label><input id="rWeight" type="number" min="0" step="0.1" /></div>
+              <div class="field" id="rf-rHeartStatus"><label>Heart status (1A/1B/2) <span class="req">*</span></label><select id="rHeartStatus"><option value="">select</option><option value="1A">1A</option><option value="1B">1B</option><option value="2">2</option></select></div>
+              <div class="field" id="rf-rStable"><label>Stable for surgery <span class="req">*</span></label><select id="rStable"><option value="">select</option><option value="true">yes</option><option value="false">no</option></select></div>
 
-      <div class="card">
-        <h2>Real-time events</h2>
-        <div class="events">
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Type</th>
-                <th class="right">Details</th>
-              </tr>
-            </thead>
-            <tbody id="eventsBody"></tbody>
-          </table>
-        </div>
-      </div>
+              <div class="field" id="rf-rMELD"><label>MELD (6-40) <span class="req">*</span></label><input id="rMELD" type="number" min="6" max="40" /></div>
+              <div class="field" id="rf-rPELD"><label>PELD (0-40) <span class="req">*</span></label><input id="rPELD" type="number" min="0" max="40" /></div>
+
+              <div class="field" id="rf-rHLA"><label>HLA match (0-6) <span class="req">*</span></label><input id="rHLA" type="number" min="0" max="6" /></div>
+              <div class="field" id="rf-rPRA"><label>PRA % (0-100) <span class="req">*</span></label><input id="rPRA" type="number" min="0" max="100" /></div>
+              <div class="field" id="rf-rCrossmatch"><label>Crossmatch <span class="req">*</span></label><select id="rCrossmatch"><option value="">select</option><option value="true">negative (pass)</option><option value="false">positive (fail)</option></select></div>
+              <div class="field" id="rf-rOnDialysis"><label>On dialysis <span class="req">*</span></label><select id="rOnDialysis"><option value="">select</option><option value="true">yes</option><option value="false">no</option></select></div>
+
+              <div class="field" id="rf-rHeight"><label>Height (cm) (30-250) <span class="req">*</span></label><input id="rHeight" type="number" min="0" step="0.5" /></div>
+              <div class="field" id="rf-rLAS"><label>LAS (0-100) <span class="req">*</span></label><input id="rLAS" type="number" min="0" max="100" step="0.1" /></div>
+              <div class="field" id="rf-rCMV"><label>CMV+ <span class="req">*</span></label><select id="rCMV"><option value="">select</option><option value="true">yes</option><option value="false">no</option></select></div>
+
+              <div class="field" id="rf-rT1DM"><label>Type 1 DM <span class="req">*</span></label><select id="rT1DM"><option value="">select</option><option value="true">yes</option><option value="false">no</option></select></div>
+              <div class="field" id="rf-rPancreasIndication"><label>Pancreas indication <span class="req">*</span></label><select id="rPancreasIndication"><option value="">select</option><option value="SPK">SPK</option><option value="PAK">PAK</option><option value="PA">PA</option></select></div>
+              <div class="field" id="rf-rCPeptide"><label>C-peptide (0-10) <span class="req">*</span></label><input id="rCPeptide" type="number" min="0" step="0.1" /></div>
+
+              <div class="field" id="rf-rVAScore"><label>Cornea visual score (0-1) <span class="req">*</span></label><input id="rVAScore" type="number" min="0" max="1" step="0.1" /></div>
+
+              <div class="field full"><button id="btnAddRecipient" class="primary-btn small">Add recipient</button><p id="recipientMsg" class="message"></p></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="donorPage" class="page">
+          <div class="page-head"><div><h2>Donor Form</h2><p>Only mandatory fields are shown for selected organ.</p></div></div>
+          <div class="card"><h3>Quick add donor (triggers allocation)</h3>
+            <div class="form-grid">
+              <div class="field" id="df-dOrgan"><label>Organ <span class="req">*</span></label><select id="dOrgan"><option value="kidney">kidney</option><option value="liver">liver</option><option value="heart">heart</option><option value="lung">lung</option><option value="pancreas">pancreas</option><option value="cornea">cornea</option></select></div>
+              <div class="field" id="df-dBlood"><label>Blood <span class="req">*</span></label><select id="dBlood"><option value="O">O</option><option value="A">A</option><option value="B">B</option><option value="AB">AB</option></select></div>
+              <div class="field" id="df-dRh"><label>Rh <span class="req">*</span></label><select id="dRh"><option value="positive">+</option><option value="negative">-</option></select></div>
+              <div class="field wide" id="df-dHospital"><label>Hospital <span class="req">*</span></label><select id="dHospital"></select></div>
+              <div class="field" id="df-dWeight"><label>Weight (kg) (1-300) <span class="req">*</span></label><input id="dWeight" type="number" min="0" step="0.1" /></div>
+              <div class="field" id="df-dHeight"><label>Height (cm) (30-250) <span class="req">*</span></label><input id="dHeight" type="number" min="0" step="0.5" /></div>
+              <div class="field" id="df-dAge"><label>Age (0-120) <span class="req">*</span></label><input id="dAge" type="number" min="0" max="120" /></div>
+              <div class="field" id="df-dBMI"><label>BMI (10-80) <span class="req">*</span></label><input id="dBMI" type="number" min="0" step="0.1" /></div>
+              <div class="field" id="df-dAmylaseNormal"><label>Amylase normal <span class="req">*</span></label><select id="dAmylaseNormal"><option value="">select</option><option value="true">yes</option><option value="false">no</option></select></div>
+              <div class="field" id="df-dLipaseNormal"><label>Lipase normal <span class="req">*</span></label><select id="dLipaseNormal"><option value="">select</option><option value="true">yes</option><option value="false">no</option></select></div>
+              <div class="field full"><button id="btnAddDonor" class="primary-btn small">Add donor</button><p id="donorMsg" class="message"></p></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="waitlistPage" class="page"><div class="page-head"><div><h2>Waitlist</h2></div></div><div class="card"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Organ</th><th>Blood</th><th>Urgency</th><th>Status</th></tr></thead><tbody id="recipientsBody"></tbody></table></div></div></section>
+        <section id="donorListPage" class="page"><div class="page-head"><div><h2>Donor List</h2></div></div><div class="card"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Organ</th><th>Blood</th><th>Viability Left</th><th>Status</th></tr></thead><tbody id="donorsBody"></tbody></table></div></div></section>
+        <section id="allocationPage" class="page"><div class="page-head"><div><h2>Allocations</h2></div></div><div class="card"><div class="table-wrap"><table><thead><tr><th>Time</th><th>Organ</th><th>Donor</th><th>Recipient</th></tr></thead><tbody id="allocationsBody"></tbody></table></div></div></section>
+        <section id="eventsPage" class="page"><div class="page-head"><div><h2>Events</h2></div></div><div class="card"><div class="table-wrap events"><table><thead><tr><th>Time</th><th>Type</th><th class="right">Details</th></tr></thead><tbody id="eventsBody"></tbody></table></div></div></section>
+      </main>
     </div>
 
     <script>
       const $ = (id) => document.getElementById(id);
-
-      function shortId(id) {
-        if (!id) return "";
-        return String(id).slice(0, 8);
-      }
-
-      function pill(text, ok) {
-        const cls = ok ? "pill ok" : "pill bad";
-        return `<span class="${cls}">${text}</span>`;
-      }
-
-      async function refreshAll() {
-        const [recipients, donors, allocations] = await Promise.all([
-          fetch("/api/recipients").then(r => r.json()),
-          fetch("/api/donors").then(r => r.json()),
-          fetch("/api/allocations").then(r => r.json()),
-        ]);
-        renderRecipients(recipients);
-        renderDonors(donors);
-        renderAllocations(allocations);
-        renderCriticalAlert(donors);
-      }
-
-      function renderRecipients(rows) {
-        $("recipientsBody").innerHTML = rows.map(r => {
-          const status = r.allocated ? pill("ALLOCATED", true) : `<span class="pill muted">WAITING</span>`;
-          return `
-            <tr>
-              <td class="muted">${shortId(r.id)}</td>
-              <td>${r.required_organ}</td>
-              <td>${r.blood_group}</td>
-              <td>${r.urgency}</td>
-              <td>${status}</td>
-            </tr>
-          `;
-        }).join("");
-      }
-
-      function renderDonors(rows) {
-        $("donorsBody").innerHTML = rows.map(d => {
-          const status = d.allocated_to_recipient_id ? pill("ALLOCATED", true) : `<span class="pill muted">UNALLOCATED</span>`;
-          const viability = viabilityLeft(d);
-          return `
-            <tr>
-              <td class="muted">${shortId(d.id)}</td>
-              <td>${d.organ_type}</td>
-              <td>${d.blood_group}</td>
-              <td class="muted">${viability}</td>
-              <td>${status}</td>
-            </tr>
-          `;
-        }).join("");
-      }
-
-      function viabilityHoursForOrgan(organ) {
-        if (organ === "heart" || organ === "lung") return 6;
-        if (organ === "liver") return 24;
-        if (organ === "kidney") return 36;
-        if (organ === "pancreas") return 20;
-        if (organ === "cornea") return 14 * 24;
-        return 24;
-      }
-
-      function viabilityLeft(donor) {
-        if (!donor.timestamp) return "n/a";
-        const maxH = viabilityHoursForOrgan(donor.organ_type);
-        const ageH = (Date.now() - new Date(donor.timestamp).getTime()) / 3600000;
-        const left = maxH - ageH;
-        if (left <= 0) return "expired";
-        if (left < 1) return `${Math.max(1, Math.floor(left * 60))} min`;
-        return `${left.toFixed(1)} h`;
-      }
-
-      function renderCriticalAlert(donors) {
-        const atRisk = donors.filter(d => !d.allocated_to_recipient_id).filter(d => {
-          const maxH = viabilityHoursForOrgan(d.organ_type);
-          const ageH = (Date.now() - new Date(d.timestamp).getTime()) / 3600000;
-          const left = maxH - ageH;
-          return left > 0 && left <= 1.5;
-        });
-        const box = $("criticalAlert");
-        if (atRisk.length === 0) {
-          box.style.display = "none";
-          box.textContent = "";
-          return;
-        }
-        box.style.display = "block";
-        box.textContent = `Critical logistics alert: ${atRisk.length} unallocated donor organ(s) nearing viability expiry (< 1.5h).`;
-      }
-
-      function renderAllocations(rows) {
-        $("allocationsBody").innerHTML = rows.map(a => {
-          const t = new Date(a.allocated_at).toLocaleTimeString();
-          return `
-            <tr>
-              <td class="muted">${t}</td>
-              <td>${a.organ_type}</td>
-              <td class="muted">${shortId(a.donor_id)}</td>
-              <td class="muted">${shortId(a.recipient_id)}</td>
-            </tr>
-          `;
-        }).join("");
-      }
-
-      function pushEvent(evt) {
-        const t = new Date(evt.timestamp).toLocaleTimeString();
-        const details = JSON.stringify(evt.payload);
-        $("eventsBody").insertAdjacentHTML("afterbegin", `
-          <tr>
-            <td class="muted">${t}</td>
-            <td><code>${evt.type}</code></td>
-            <td class="right muted small"><code>${details}</code></td>
-          </tr>
-        `);
-      }
-
-      function numOrNull(id) {
-        const v = $(id).value.trim();
-        if (v === "") return null;
-        const n = Number(v);
-        return Number.isNaN(n) ? null : n;
-      }
-
-      function boolOrNull(id) {
-        const v = $(id).value;
-        if (v === "") return null;
-        return v === "true";
-      }
-
-      function setRequired(id, required) {
-        const el = $(id);
-        if (!el) return;
-        if (required) el.setAttribute("required", "required");
-        else el.removeAttribute("required");
-      }
-
-      function setEnabled(id, enabled) {
-        const el = $(id);
-        if (!el) return;
-        el.disabled = !enabled;
-      }
+      const showOnly = (prefix, ids) => {
+        document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => el.classList.add("hidden"));
+        ids.forEach(id => { const el = $(id); if (el) el.classList.remove("hidden"); });
+      };
+      const shortId = (id) => id ? String(id).slice(0, 8) : "";
+      const pill = (text, ok) => `<span class="pill ${ok ? "ok" : "bad"}">${text}</span>`;
+      const emptyRow = (colspan, text) => `<tr><td colspan="${colspan}" class="empty">${text}</td></tr>`;
+      const numOrNull = (id) => { const v = $(id).value.trim(); if (!v) return null; const n = Number(v); return Number.isNaN(n) ? null : n; };
+      const boolOrNull = (id) => { const v = $(id).value; if (!v) return null; return v === "true"; };
+      const toUserErrorMessage = (data) => {
+        if (!data) return "Something went wrong. Please try again.";
+        if (typeof data.detail === "string") return data.detail;
+        if (Array.isArray(data.detail)) return data.detail.map(e => (e.msg || String(e)).replace(/^Value error,\s*/i, "")).join(" | ");
+        return "Request could not be processed. Please check required fields.";
+      };
+      function showPage(pageId){document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===pageId));document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.page===pageId));}
+      document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => showPage(btn.dataset.page)));
+      function viabilityHoursForOrgan(organ){if(organ==="heart"||organ==="lung")return 6;if(organ==="liver")return 24;if(organ==="kidney")return 36;if(organ==="pancreas")return 20;if(organ==="cornea")return 336;return 24;}
+      function viabilityLeft(d){if(!d.timestamp)return"n/a";const maxH=viabilityHoursForOrgan(d.organ_type);const ageH=(Date.now()-new Date(d.timestamp).getTime())/3600000;const left=maxH-ageH;if(left<=0)return"expired";if(left<1)return`${Math.max(1,Math.floor(left*60))} min`;return`${left.toFixed(1)} h`;}
 
       function applyRecipientFormRules() {
         const organ = $("rOrgan").value;
-        // Defaults
-        ["rAge","rWeight","rHeight","rHeartStatus","rStable","rMELD","rPELD","rHLA","rPRA","rOnDialysis","rLAS","rCMV","rT1DM","rPancreasIndication","rCPeptide","rVAScore"].forEach(id => setEnabled(id, true));
-        ["rHospital","rRh","rBlood"].forEach(id => setRequired(id, true));
-        ["rAge","rWeight","rHeight","rHeartStatus","rStable","rMELD","rPELD","rHLA","rPRA","rOnDialysis","rLAS","rCMV","rT1DM","rPancreasIndication","rCPeptide","rVAScore"].forEach(id => setRequired(id, false));
-
-        if (organ === "heart") {
-          setRequired("rWeight", true);
-          setRequired("rHeartStatus", true);
-          setRequired("rStable", true);
-        } else if (organ === "liver") {
-          setRequired("rWeight", true);
-          // require MELD or PELD: enforce in submit validation
-          setRequired("rMELD", false);
-          setRequired("rPELD", false);
-        } else if (organ === "kidney") {
-          setRequired("rHLA", true);
-          setRequired("rPRA", true);
-          // require dialysis or egfr: we only capture dialysis here; backend enforces at least one
-          setRequired("rOnDialysis", true);
-        } else if (organ === "lung") {
-          setRequired("rLAS", true);
-          setRequired("rHeight", true);
-          setRequired("rCMV", true);
-        } else if (organ === "pancreas") {
-          setRequired("rT1DM", true);
-          setRequired("rPancreasIndication", true);
-          setRequired("rCPeptide", true);
-        } else if (organ === "cornea") {
-          setRequired("rVAScore", true);
-        }
+        const base = ["rf-rOrgan","rf-rBlood","rf-rRh","rf-rHospital","rf-rUrgency"];
+        const byOrgan = {
+          heart: ["rf-rWeight","rf-rHeartStatus","rf-rStable"],
+          liver: ["rf-rWeight","rf-rMELD","rf-rPELD"],
+          kidney: ["rf-rHLA","rf-rPRA","rf-rCrossmatch","rf-rOnDialysis"],
+          lung: ["rf-rHeight","rf-rLAS","rf-rCMV"],
+          pancreas: ["rf-rT1DM","rf-rPancreasIndication","rf-rCPeptide"],
+          cornea: ["rf-rVAScore"]
+        };
+        showOnly("rf-", base.concat(byOrgan[organ] || []));
       }
 
       function applyDonorFormRules() {
         const organ = $("dOrgan").value;
-        ["dAge","dWeight","dHeight","dPackYears","dBMI","dAmylaseNormal","dLipaseNormal","dCMV"].forEach(id => setEnabled(id, true));
-        ["dHospital","dRh","dBlood"].forEach(id => setRequired(id, true));
-        ["dAge","dWeight","dHeight","dPackYears","dBMI","dAmylaseNormal","dLipaseNormal"].forEach(id => setRequired(id, false));
-
-        if (organ === "heart" || organ === "liver" || organ === "kidney") {
-          setRequired("dWeight", true);
-        }
-        if (organ === "lung") {
-          setRequired("dHeight", true);
-        }
-        if (organ === "pancreas") {
-          setRequired("dAge", true);
-          setRequired("dBMI", true);
-          setRequired("dAmylaseNormal", true);
-          setRequired("dLipaseNormal", true);
-        }
-        if (organ === "cornea") {
-          setRequired("dAge", true);
-        }
+        const base = ["df-dOrgan","df-dBlood","df-dRh","df-dHospital"];
+        const byOrgan = {
+          heart: ["df-dWeight"],
+          liver: ["df-dWeight"],
+          kidney: ["df-dWeight"],
+          lung: ["df-dHeight"],
+          pancreas: ["df-dAge","df-dBMI","df-dAmylaseNormal","df-dLipaseNormal"],
+          cornea: ["df-dAge"]
+        };
+        showOnly("df-", base.concat(byOrgan[organ] || []));
       }
 
-      async function loadHospitals() {
-        const res = await fetch("/api/hospitals");
-        const hospitals = await res.json();
-        const options = hospitals.map(h => `<option value="${h.id}">${h.id} — ${h.name}</option>`).join("");
-        $("rHospital").innerHTML = options;
-        $("dHospital").innerHTML = options;
+      function renderRecipients(rows){
+        const html = rows.length ? rows.map(r=>`<tr><td class="muted mono">${shortId(r.id)}</td><td>${r.required_organ}</td><td>${r.blood_group}</td><td>${r.urgency}</td><td>${r.allocated?pill("ALLOCATED",true):'<span class="pill muted">WAITING</span>'}</td></tr>`).join("") : emptyRow(5,"No recipients added yet.");
+        $("recipientsBody").innerHTML = html; $("overviewRecipientsBody").innerHTML = rows.length ? html : emptyRow(5,"No recipients added yet.");
+      }
+      function renderDonors(rows){
+        const html = rows.length ? rows.map(d=>`<tr><td class="muted mono">${shortId(d.id)}</td><td>${d.organ_type}</td><td>${d.blood_group}</td><td class="muted">${viabilityLeft(d)}</td><td>${d.allocated_to_recipient_id?pill("ALLOCATED",true):'<span class="pill muted">UNALLOCATED</span>'}</td></tr>`).join("") : emptyRow(5,"No donors added yet.");
+        $("donorsBody").innerHTML = html; $("overviewDonorsBody").innerHTML = rows.length ? html : emptyRow(5,"No donors added yet.");
+      }
+      function renderAllocations(rows){
+        const html = rows.length ? rows.map(a=>`<tr><td class="muted">${new Date(a.allocated_at).toLocaleTimeString()}</td><td>${a.organ_type}</td><td class="muted mono">${shortId(a.donor_id)}</td><td class="muted mono">${shortId(a.recipient_id)}</td></tr>`).join("") : emptyRow(4,"No allocations recorded yet.");
+        $("allocationsBody").innerHTML = html; $("overviewAllocationsBody").innerHTML = html;
+      }
+      function pushEvent(evt){$("eventsBody").insertAdjacentHTML("afterbegin",`<tr><td class="muted">${new Date(evt.timestamp).toLocaleTimeString()}</td><td><code>${evt.type}</code></td><td class="right muted small"><code>${JSON.stringify(evt.payload)}</code></td></tr>`);}
+      function renderCriticalAlert(donors){
+        const atRisk = donors.filter(d=>!d.allocated_to_recipient_id).filter(d=>{const left=viabilityHoursForOrgan(d.organ_type)-((Date.now()-new Date(d.timestamp).getTime())/3600000); return left>0 && left<=1.5;});
+        $("statCritical").textContent = atRisk.length; const box=$("criticalAlert");
+        if(!atRisk.length){ box.style.display="none"; box.textContent=""; return; }
+        box.style.display="block"; box.textContent=`Critical logistics alert: ${atRisk.length} unallocated donor organ(s) nearing viability expiry (< 1.5h).`;
+      }
+      async function loadHospitals(){const res=await fetch("/api/hospitals");const hospitals=await res.json();const options=hospitals.map(h=>`<option value="${h.id}">${h.id} — ${h.name}</option>`).join("");$("rHospital").innerHTML=options;$("dHospital").innerHTML=options;}
+      async function refreshAll(){
+        const [recipients, donors, allocations] = await Promise.all([fetch("/api/recipients").then(r=>r.json()), fetch("/api/donors").then(r=>r.json()), fetch("/api/allocations").then(r=>r.json())]);
+        renderRecipients(recipients); renderDonors(donors); renderAllocations(allocations); renderCriticalAlert(donors);
+        $("statRecipients").textContent = recipients.length; $("statDonors").textContent = donors.length; $("statAllocations").textContent = allocations.length;
       }
 
       $("btnAddRecipient").onclick = async () => {
         $("recipientMsg").textContent = "";
-        // Extra client-side validation for liver MELD/PELD
-        if ($("rOrgan").value === "liver") {
-          if (($("rMELD").value.trim() === "") && ($("rPELD").value.trim() === "")) {
-            $("recipientMsg").textContent = "Error: For liver, please provide MELD or PELD.";
-            return;
-          }
-        }
+        if ($("rOrgan").value === "liver" && !$("rMELD").value.trim() && !$("rPELD").value.trim()) { $("recipientMsg").textContent = "Error: For liver, please provide MELD or PELD."; return; }
         const body = {
-          required_organ: $("rOrgan").value,
-          blood_group: $("rBlood").value,
-          rh: $("rRh").value,
-          urgency: Number($("rUrgency").value),
-          age_years: numOrNull("rAge"),
-          weight_kg: numOrNull("rWeight"),
-          height_cm: numOrNull("rHeight"),
-          hospital_id: $("rHospital").value,
-          heart_status: $("rHeartStatus").value || null,
-          hemodynamically_stable: boolOrNull("rStable"),
-          meld_score: numOrNull("rMELD"),
-          peld_score: numOrNull("rPELD"),
-          hla_match_score: numOrNull("rHLA"),
-          pra_percent: numOrNull("rPRA"),
-          on_dialysis: boolOrNull("rOnDialysis"),
-          egfr: null,
-          las_score: numOrNull("rLAS"),
-          cmv_positive: boolOrNull("rCMV"),
-          type1_diabetes: boolOrNull("rT1DM"),
-          pancreas_indication: $("rPancreasIndication").value || null,
-          hba1c: null,
-          c_peptide: numOrNull("rCPeptide"),
-          visual_acuity_score: numOrNull("rVAScore"),
+          required_organ: $("rOrgan").value, blood_group: $("rBlood").value, rh: $("rRh").value, urgency: Number($("rUrgency").value),
+          age_years: null, weight_kg: numOrNull("rWeight"), height_cm: numOrNull("rHeight"), hospital_id: $("rHospital").value,
+          heart_status: $("rHeartStatus").value || null, hemodynamically_stable: boolOrNull("rStable"),
+          meld_score: numOrNull("rMELD"), peld_score: numOrNull("rPELD"), hla_match_score: numOrNull("rHLA"), pra_percent: numOrNull("rPRA"),
+          crossmatch_negative: boolOrNull("rCrossmatch"), on_dialysis: boolOrNull("rOnDialysis"), egfr: null,
+          las_score: numOrNull("rLAS"), cmv_positive: boolOrNull("rCMV"), type1_diabetes: boolOrNull("rT1DM"),
+          pancreas_indication: $("rPancreasIndication").value || null, hba1c: null, c_peptide: numOrNull("rCPeptide"), visual_acuity_score: numOrNull("rVAScore")
         };
-        const res = await fetch("/api/recipients", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        const res = await fetch("/api/recipients",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
         const data = await res.json();
-        $("recipientMsg").textContent = res.ok ? `Created recipient ${shortId(data.id)}` : `Error: ${JSON.stringify(data)}`;
+        $("recipientMsg").textContent = res.ok ? `Created recipient ${shortId(data.id)}` : `Error: ${toUserErrorMessage(data)}`;
+        if (res.ok) showPage("waitlistPage");
         await refreshAll();
       };
 
       $("btnAddDonor").onclick = async () => {
         $("donorMsg").textContent = "";
         const body = {
-          organ_type: $("dOrgan").value,
-          blood_group: $("dBlood").value,
-          rh: $("dRh").value,
-          age_years: numOrNull("dAge"),
-          weight_kg: numOrNull("dWeight"),
-          height_cm: numOrNull("dHeight"),
-          hospital_id: $("dHospital").value,
-          smoker_pack_years: numOrNull("dPackYears"),
-          donor_bmi: numOrNull("dBMI"),
-          donor_amylase_normal: boolOrNull("dAmylaseNormal"),
-          donor_lipase_normal: boolOrNull("dLipaseNormal"),
-          cmv_positive: boolOrNull("dCMV"),
+          organ_type: $("dOrgan").value, blood_group: $("dBlood").value, rh: $("dRh").value,
+          age_years: numOrNull("dAge"), weight_kg: numOrNull("dWeight"), height_cm: numOrNull("dHeight"),
+          hospital_id: $("dHospital").value, smoker_pack_years: null, donor_bmi: numOrNull("dBMI"),
+          donor_amylase_normal: boolOrNull("dAmylaseNormal"), donor_lipase_normal: boolOrNull("dLipaseNormal"), cmv_positive: null
         };
-        const res = await fetch("/api/donors", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        const res = await fetch("/api/donors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
         const data = await res.json();
-        $("donorMsg").textContent = res.ok ? `Created donor ${shortId(data.id)} (allocation attempted)` : `Error: ${JSON.stringify(data)}`;
+        $("donorMsg").textContent = res.ok ? `Created donor ${shortId(data.id)} (allocation attempted)` : `Error: ${toUserErrorMessage(data)}`;
+        if (res.ok) showPage("donorListPage");
         await refreshAll();
       };
 
       (async () => {
-        await loadHospitals();
-        applyRecipientFormRules();
-        applyDonorFormRules();
+        await loadHospitals(); applyRecipientFormRules(); applyDonorFormRules();
         $("rOrgan").addEventListener("change", applyRecipientFormRules);
         $("dOrgan").addEventListener("change", applyDonorFormRules);
         await refreshAll();
-        const wsProto = (location.protocol === "https:") ? "wss" : "ws";
-        const ws = new WebSocket(`${wsProto}://${location.host}/ws`);
-
-        ws.onopen = () => { $("wsStatus").textContent = "connected"; $("wsStatus").className = "pill ok"; };
-        ws.onclose = () => { $("wsStatus").textContent = "disconnected"; $("wsStatus").className = "pill bad"; };
-        ws.onerror = () => { $("wsStatus").textContent = "error"; $("wsStatus").className = "pill bad"; };
-
-        ws.onmessage = async (msg) => {
-          const evt = JSON.parse(msg.data);
-          pushEvent(evt);
-          // Keep UI consistent
-          await refreshAll();
-        };
+        const ws = new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws`);
+        ws.onopen = () => { $("wsStatus").textContent="connected"; $("wsStatus").className="pill ok"; };
+        ws.onclose = () => { $("wsStatus").textContent="disconnected"; $("wsStatus").className="pill bad"; };
+        ws.onerror = () => { $("wsStatus").textContent="error"; $("wsStatus").className="pill bad"; };
+        ws.onmessage = async (msg) => { pushEvent(JSON.parse(msg.data)); await refreshAll(); };
       })();
     </script>
   </body>
